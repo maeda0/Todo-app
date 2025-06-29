@@ -1,0 +1,29 @@
+version: '3.8' # Docker Compose のバージョンを指定
+
+services:
+  # Vueアプリケーションサービスを定義
+  vue-app:
+    # 現在のディレクトリの Dockerfile を使ってイメージをビルド
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # コンテナにわかりやすい名前を付けます
+    container_name: Todo-app-container
+    # ホストマシンとコンテナ間のポートマッピング
+    # "ホストポート:コンテナポート"
+    # ホストの5173ポートへのアクセスが、コンテナの5173ポートに転送されます
+    ports:
+      - "5173:5173"
+    # ホストマシンとコンテナ間でファイルを共有（同期）する設定
+    volumes:
+      # ホストのカレントディレクトリ（プロジェクトルート）をコンテナの /app にマウント
+      # これにより、ホストでコードを編集するとコンテナにもリアルタイムで反映されます
+      - .:/app
+      # コンテナ内の node_modules ディレクトリは、ホストと共有しないようにする
+      # これにより、異なるOSやNode.jsバージョンでの問題を防ぎ、コンテナ内で依存関係を管理できます
+      - /app/node_modules
+    # コンテナ起動時に実行するコマンド（DockerfileのCMDを上書き）
+    command: yarn dev --host
+    # コンテナ内で使用する環境変数を設定（ここでは開発環境であることを明示）
+    environment:
+      NODE_ENV: development
