@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-// v-calendarのCSSをインポートします
-import 'v-calendar/style.css';
+import { ref, computed, watch, onMounted } from 'vue';
+import Calendar from './components/Calendar.vue'; // Calendarコンポーネントをインポート
+import TodoInput from './components/TodoInput.vue'; // TodoInputコンポーネントをインポート
 
 // Todoアイテムの型定義
 interface Todo {
@@ -13,18 +13,36 @@ interface Todo {
 // 選択されている日付（v-modelで使用）
 const selectedDate = ref(new Date());
 
-// 新しいTodoのテキスト入力
-const newTodoText = ref('');
-
 // 全てのTodoを格納するオブジェクト
 // キーは日付 (YYYY-MM-DD), 値はその日のTodo配列
-const todos = ref<Record<string, Todo[]>>({
-  // 初期データ例
-  [new Date().toISOString().split('T')[0]]: [
-    { id: 1, text: 'Vueの学習', completed: false },
-    { id: 2, text: 'v-calendarを試す', completed: true },
-  ]
+const todos = ref<Record<string, Todo[]>>({});
+
+// アプリケーションがマウントされた時にLocalStorageからデータを読み込む
+onMounted(() => {
+  const savedTodos = localStorage.getItem('todos');
+  if (savedTodos) {
+    try {
+      todos.value = JSON.parse(savedTodos);
+    } catch (e) {
+      console.error("Failed to parse todos from localStorage:", e);
+      todos.value = {};
+    }
+  } else {
+    // 初回起動時やLocalStorageにデータがない場合の初期データ
+    todos.value = {
+      [new Date().toISOString().split('T')[0]]: [
+        { id: 1, text: 'Vueの学習', completed: false },
+        { id: 2, text: 'v-calendarを試す', completed: true },
+      ]
+    };
+  }
 });
+
+// todos データが変更されたらLocalStorageに保存する
+// オブジェクトの深い変更を監視するためにdeep: trueを設定
+watch(todos, (newTodos) => {
+  localStorage.setItem('todos', JSON.stringify(newTodos));
+}, { deep: true });
 
 // 選択されている日付に対応するTodoリストを計算する算出プロパティ
 const selectedDayTodos = computed(() => {
@@ -41,22 +59,23 @@ const formattedDate = computed(() => {
   });
 });
 
-// 新しいTodoを追加する関数
-const addTodo = () => {
-  if (newTodoText.value.trim() === '') return;
+// Calendarコンポーネントからの日付更新イベントを受け取る関数
+const updateSelectedDate = (date: Date) => {
+  selectedDate.value = date;
+};
 
+// 新しいTodoを追加する関数
+// TodoInputコンポーネントからのaddTodoイベントを受け取る
+const addTodo = (text: string) => {
   const dateKey = selectedDate.value.toISOString().split('T')[0];
   if (!todos.value[dateKey]) {
     todos.value[dateKey] = [];
   }
-
   todos.value[dateKey].push({
     id: Date.now(), // ユニークIDとしてタイムスタンプを使用
-    text: newTodoText.value,
+    text: text,
     completed: false,
   });
-
-  newTodoText.value = ''; // 入力欄をクリア
 };
 
 // Todoの完了状態を切り替える関数
@@ -75,38 +94,14 @@ const removeTodo = (id: number) => {
       todos.value[dateKey] = todos.value[dateKey].filter(t => t.id !== id);
   }
 };
-
-// カレンダーに表示するドットの属性を計算
-const attrs = computed(() => [
-  {
-    key: 'today',
-    highlight: true,
-    dates: new Date(),
-  },
-  {
-    key: 'todos',
-    dot: 'blue',
-    dates: Object.keys(todos.value).filter(dateKey => todos.value[dateKey].length > 0).map(dateKey => new Date(dateKey)),
-  },
-]);
-
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
     <div class="w-full max-w-4xl flex flex-col md:flex-row gap-8 bg-white rounded-2xl shadow-lg p-8">
 
-      <!-- 左側: カレンダー -->
-      <div class="w-full lg:w-1/2 flex justify-center">
-        <VDatePicker
-          v-model="selectedDate"
-          :attributes="attrs"
-          :is-required="true"
-          title-position="left"
-          borderless
-          transparent
-        />
-      </div>
+      <!-- 左側: カレンダーコンポーネント -->
+      <Calendar :todos="todos" @update:selectedDate="updateSelectedDate" />
 
       <!-- 右側: Todoリスト -->
       <div class="w-full lg:w-1/2 flex flex-col">
@@ -115,21 +110,8 @@ const attrs = computed(() => [
         </h2>
         <p class="text-gray-500 mb-6">のタスク</p>
 
-        <!-- Todo追加フォーム -->
-        <form @submit.prevent="addTodo" class="flex gap-2 mb-6">
-          <input
-            v-model="newTodoText"
-            type="text"
-            placeholder="新しいタスクを追加..."
-            class="flex-grow p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          <button
-            type="submit"
-            class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            追加
-          </button>
-        </form>
+        <!-- Todo追加フォームコンポーネント -->
+        <TodoInput @addTodo="addTodo" />
 
         <!-- Todoリスト表示 -->
         <div class="space-y-3 overflow-y-auto h-64 pr-2">
@@ -150,9 +132,9 @@ const attrs = computed(() => [
               </span>
             </div>
              <button @click.stop="removeTodo(todo.id)" class="text-red-400 hover:text-red-600 ml-4">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+               </svg>
              </button>
           </div>
         </div>
@@ -161,5 +143,3 @@ const attrs = computed(() => [
     </div>
   </div>
 </template>
-
-
