@@ -1,12 +1,17 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate' 
 import './style.css'
 import App from './App.vue'
-import VCalendar, { Calendar, DatePicker } from 'v-calendar';
-import 'v-calendar/dist/style.css';
+import VCalendar from 'v-calendar'
+import 'v-calendar/dist/style.css'
 
-const app = createApp(App);
+const app = createApp(App)
 
-app.component('Calendar', Calendar);
-app.component('DatePicker', DatePicker);
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate) 
+
+app.use(pinia)
+app.component('VCalendar', VCalendar);
 app.use(VCalendar, {});
-app.mount('#app');
+app.mount('#app')

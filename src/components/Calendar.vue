@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, defineEmits } from 'vue';
+import { ref, computed, watch, defineEmits, onMounted, onUnmounted } from 'vue';
 
 interface Todo {
   id: number;
@@ -15,6 +15,21 @@ const emit = defineEmits(['update:selectedDate']);
 
 const currentMonth = ref(new Date()); // 現在表示している月
 const selectedDate = ref(new Date()); // 選択されている日付
+const currentTime = ref(new Date()); // 現在時刻
+
+// 1秒ごとに現在時刻を更新するタイマー
+let timerId: number;
+onMounted(() => {
+  timerId = window.setInterval(() => {
+    currentTime.value = new Date();
+  }, 1000);
+});
+
+// コンポーネントがアンマウントされた時にタイマーをクリア
+onUnmounted(() => {
+  clearInterval(timerId);
+});
+
 
 // selectedDateが変更されたら親コンポーネントに通知
 watch(selectedDate, (newDate) => {
@@ -34,6 +49,15 @@ const formattedMonthYear = computed(() => {
     year: 'numeric',
     month: 'long',
   });
+});
+
+// 現在時刻を時、分、秒に分割する
+const timeParts = computed(() => {
+  const date = currentTime.value;
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return { hours, minutes, seconds };
 });
 
 // 曜日名の配列
@@ -104,7 +128,6 @@ const selectDay = (date: Date | null) => {
 
 <template>
   <div class="w-full bg-white rounded-xl shadow-md p-6">
-      <!-- カレンダーヘッダー -->
       <div class="flex justify-between items-center mb-6">
         <button @click="changeMonth(-1)" class="p-3 rounded-full hover:bg-gray-200 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,11 +142,10 @@ const selectDay = (date: Date | null) => {
         </button>
       </div>
 
-      <!-- 曜日表示 -->
       <div class="grid grid-cols-7 text-center text-xl font-medium mb-4">
-        <div 
-          v-for="day in weekdays" 
-          :key="day" 
+        <div
+          v-for="day in weekdays"
+          :key="day"
           class="py-4"
           :class="{
             'text-red-500': day === '日', // 日曜日を赤色に
@@ -135,7 +157,6 @@ const selectDay = (date: Date | null) => {
         </div>
       </div>
 
-      <!-- 日付表示 -->
       <div class="grid grid-cols-7 gap-3 h-auto">
         <div
           v-for="(date, index) in calendarDays"
@@ -152,6 +173,13 @@ const selectDay = (date: Date | null) => {
           {{ date ? date.getDate() : '' }}
           <span v-if="hasTodo(date)" class="absolute bottom-1 right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
         </div>
+      </div>
+      <div class="text-center font-semibold text-gray-800 flex justify-center items-baseline">
+        <span class="text-4xl">{{ timeParts.hours }}</span>
+        <span class="text-3xl mx-1">:</span>
+        <span class="text-4xl">{{ timeParts.minutes }}</span>
+        <span class="text-3xl mx-1">:</span>
+        <span class="text-2xl">{{ timeParts.seconds }}</span>
       </div>
     </div>
 </template>

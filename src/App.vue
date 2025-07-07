@@ -1,56 +1,28 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import Calendar from './components/Calendar.vue'; // Calendarコンポーネントをインポート
-import TodoInput from './components/TodoInput.vue'; // TodoInputコンポーネントをインポート
+import { ref, computed } from 'vue'; // onMountedを削除
+import Calendar from './components/Calendar.vue';
+import TodoInput from './components/TodoInput.vue';
+import { useTodoStore } from './todoStore';
 
-// Todoアイテムの型定義
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-}
+// --- ストアの利用 ---
+const todoStore = useTodoStore();
 
-// 選択されている日付（v-modelで使用）
+// 選択されている日付
 const selectedDate = ref(new Date());
 
-// 全てのTodoを格納するオブジェクト
-// キーは日付 (YYYY-MM-DD), 値はその日のTodo配列
-const todos = ref<Record<string, Todo[]>>({});
+// --- 算出プロパティ ---
 
-// アプリケーションがマウントされた時にLocalStorageからデータを読み込む
-onMounted(() => {
-  const savedTodos = localStorage.getItem('todos');
-  if (savedTodos) {
-    try {
-      todos.value = JSON.parse(savedTodos);
-    } catch (e) {
-      console.error("Failed to parse todos from localStorage:", e);
-      todos.value = {};
-    }
-  } else {
-    // 初回起動時やLocalStorageにデータがない場合の初期データ
-    todos.value = {
-      [new Date().toISOString().split('T')[0]]: [
-        { id: 1, text: 'Vueの学習', completed: false },
-        { id: 2, text: 'v-calendarを試す', completed: true },
-      ]
-    };
-  }
+// 選択された日付のキー (YYYY-MM-DD)
+const selectedDateKey = computed(() => {
+  return selectedDate.value.toISOString().split('T')[0];
 });
 
-// todos データが変更されたらLocalStorageに保存する
-// オブジェクトの深い変更を監視するためにdeep: trueを設定
-watch(todos, (newTodos) => {
-  localStorage.setItem('todos', JSON.stringify(newTodos));
-}, { deep: true });
-
-// 選択されている日付に対応するTodoリストを計算する算出プロパティ
+// 選択された日付のToDoリスト
 const selectedDayTodos = computed(() => {
-  const dateKey = selectedDate.value.toISOString().split('T')[0];
-  return todos.value[dateKey] || [];
+  return todoStore.todos[selectedDateKey.value] || [];
 });
 
-// 日付をフォーマットするヘルパー関数 (例: 2023年7月15日)
+// フォーマットされた日付
 const formattedDate = computed(() => {
   return selectedDate.value.toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -59,60 +31,48 @@ const formattedDate = computed(() => {
   });
 });
 
-// Calendarコンポーネントからの日付更新イベントを受け取る関数
+// --- イベントハンドラ ---
+
+// 日付が更新された時
 const updateSelectedDate = (date: Date) => {
   selectedDate.value = date;
 };
 
-// 新しいTodoを追加する関数
-// TodoInputコンポーネントからのaddTodoイベントを受け取る
-const addTodo = (text: string) => {
-  const dateKey = selectedDate.value.toISOString().split('T')[0];
-  if (!todos.value[dateKey]) {
-    todos.value[dateKey] = [];
-  }
-  todos.value[dateKey].push({
-    id: Date.now(), // ユニークIDとしてタイムスタンプを使用
-    text: text,
-    completed: false,
-  });
+// Todoを追加
+const handleAddTodo = (text: string) => {
+  todoStore.addTodo(selectedDateKey.value, text);
 };
 
-// Todoの完了状態を切り替える関数
-const toggleTodo = (id: number) => {
-  const dateKey = selectedDate.value.toISOString().split('T')[0];
-  const todo = todos.value[dateKey]?.find(t => t.id === id);
-  if (todo) {
-    todo.completed = !todo.completed;
-  }
+// Todoの完了状態を切り替え
+const handleToggleTodo = (id: number) => {
+  todoStore.toggleTodo(selectedDateKey.value, id);
 };
 
-// Todoを削除する関数
-const removeTodo = (id: number) => {
-  const dateKey = selectedDate.value.toISOString().split('T')[0];
-  if(todos.value[dateKey]){
-      todos.value[dateKey] = todos.value[dateKey].filter(t => t.id !== id);
-  }
+// Todoを削除
+const handleRemoveTodo = (id: number) => {
+  todoStore.removeTodo(selectedDateKey.value, id);
 };
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
-    <div class="w-full max-w-5xl h-[700px] flex flex-col md:flex-row gap-8 bg-white rounded-2xl shadow-lg p-8">
+    <div class="w-full max-w-5xl h-[650px] flex flex-col md:flex-row gap-8 bg-white rounded-2xl shadow-lg p-8">
 
-      <!-- 左側: カレンダーコンポーネントを枠で囲む -->
       <div class="w-full lg:w-1/2 flex justify-center">
-          <Calendar :todos="todos" @update:selectedDate="updateSelectedDate" />
+        <Calendar 
+          :todos="todoStore.todos"
+          :selectedDate="selectedDate" 
+          @update:selectedDate="updateSelectedDate"
+         />
       </div>
 
-      <!-- 右側: Todoリストを枠で囲む -->
       <div class="w-full lg:w-1/2 flex flex-col">
-        <div class="w-full bg-white rounded-xl shadow-md p-6">
+        <div class="w-full bg-white h-[700px] rounded-xl shadow-md p-6">
           <h2 class="text-2xl font-bold text-gray-800 mb-1">
             {{ formattedDate }}
           </h2>
           <p class="text-gray-500 mb-6">のタスク</p>
-          <TodoInput @addTodo="addTodo" />
+          <TodoInput @addTodo="handleAddTodo" />
           <div class="space-y-3 overflow-y-auto h-64 pr-2">
             <p v-if="selectedDayTodos.length === 0" class="text-gray-500 text-center mt-8">
               この日のタスクはありません。
@@ -120,7 +80,7 @@ const removeTodo = (id: number) => {
             <div
               v-for="todo in selectedDayTodos"
               :key="todo.id"
-              @click="toggleTodo(todo.id)"
+              @click="handleToggleTodo(todo.id)"
               class="flex items-center p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
               :class="{ 'opacity-50': todo.completed }"
             >
@@ -130,7 +90,7 @@ const removeTodo = (id: number) => {
                   {{ todo.text }}
                 </span>
               </div>
-              <button @click.stop="removeTodo(todo.id)" class="text-red-400 hover:text-red-600 ml-4">
+              <button @click.stop="handleRemoveTodo(todo.id)" class="text-red-400 hover:text-red-600 ml-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -139,11 +99,10 @@ const removeTodo = (id: number) => {
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <style>
-
+/* スタイルに変更はありません */
 </style>
