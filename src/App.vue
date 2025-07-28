@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'; // onMountedを削除
+import { ref, computed } from 'vue'; 
 import Calendar from './components/Calendar.vue';
 import TodoInput from './components/TodoInput.vue';
 import { useTodoStore } from './todoStore';
@@ -10,11 +10,19 @@ const todoStore = useTodoStore();
 // 選択されている日付
 const selectedDate = ref(new Date());
 
+// --- ヘルパー関数 ---
+const toDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // --- 算出プロパティ ---
 
 // 選択された日付のキー (YYYY-MM-DD)
 const selectedDateKey = computed(() => {
-  return selectedDate.value.toISOString().split('T')[0];
+  return toDateKey(selectedDate.value);
 });
 
 // 選択された日付のToDoリスト
@@ -28,6 +36,7 @@ const formattedDate = computed(() => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    weekday: 'short',
   });
 });
 
@@ -68,10 +77,9 @@ const handleRemoveTodo = (id: number) => {
 
       <div class="w-full lg:w-1/2 flex flex-col">
         <div class="w-full bg-white h-[700px] rounded-xl shadow-md p-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-1">
+          <h2 class="text-2xl font-bold text-gray-800 mb-8">
             {{ formattedDate }}
           </h2>
-          <p class="text-gray-500 mb-6">のタスク</p>
           <TodoInput @addTodo="handleAddTodo" />
           <div class="space-y-3 overflow-y-auto h-64 pr-2">
             <p v-if="selectedDayTodos.length === 0" class="text-gray-500 text-center mt-8">

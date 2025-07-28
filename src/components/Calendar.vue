@@ -13,6 +13,13 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:selectedDate']);
 
+const toDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const currentMonth = ref(new Date()); // 現在表示している月
 const selectedDate = ref(new Date()); // 選択されている日付
 const currentTime = ref(new Date()); // 現在時刻
@@ -112,11 +119,28 @@ const isSelected = (date: Date | null) => {
 };
 
 // その日にTodoがあるかどうかを判定
-const hasTodo = (date: Date | null) => {
+/*const hasTodo = (date: Date | null) => {
   if (!date) return false;
-  const dateKey = date.toISOString().split('T')[0];
+  const dateKey = toDateKey(date);
   return props.todos[dateKey] && props.todos[dateKey].length > 0;
 };
+*/
+
+// その日に未完了のTodoがあるかどうかを判定
+const hasIncompleteTodo = computed(() => (date: Date | null) => {
+  if (!date) return false;
+  const dateKey = toDateKey(date);
+  const dayTodos = props.todos?.[dateKey];
+  return dayTodos ? dayTodos.some(todo => !todo.completed) : false;
+});
+// その日のすべてのTodoが完了しているかどうかを判定
+const allTodosCompleted = computed(() => (date: Date | null) => {
+   if (!date) return false;
+   const dateKey = toDateKey(date);
+   const dayTodos = props.todos?.[dateKey];
+   //return dayTodos ? dayTodos.every(todo => todo.completed) : false;
+   return dayTodos && dayTodos.length > 0 ? dayTodos.every(todo => todo.completed) : false;
+});
 
 // 日付セルがクリックされた時の処理
 const selectDay = (date: Date | null) => {
@@ -171,7 +195,15 @@ const selectDay = (date: Date | null) => {
           @click="selectDay(date)"
         >
           {{ date ? date.getDate() : '' }}
-          <span v-if="hasTodo(date)" class="absolute bottom-1 right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
+          <span
+            v-if="date && (hasIncompleteTodo(date) || allTodosCompleted(date))"
+            class="absolute bottom-1 right-1 w-3 h-3 rounded-full"
+            :class="{
+              'bg-red-500': hasIncompleteTodo(date),
+              'bg-white border border-gray-300': allTodosCompleted(date),
+              'z-10': true // 常に前面に表示
+            }"
+          ></span>
         </div>
       </div>
       <div class="text-center font-semibold text-gray-800 flex justify-center items-baseline">
@@ -189,4 +221,7 @@ const selectDay = (date: Date | null) => {
 /* .aspect-square {
   aspect-ratio: 1 / 1;
 } */
+.relative > span.z-10 {
+  z-index: 2;
+}
 </style>
