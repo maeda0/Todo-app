@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import Calendar from './components/Calendar.vue';
 import TodoInput from './components/TodoInput.vue';
-import AddTodoModal from './components/Modal.vue'; 
+import AddTodoModal from './components/Modal.vue';
 import { useTodoStore } from './todoStore';
 
 // --- ストアの利用 ---
@@ -74,7 +74,7 @@ const openAddTodoModal = () => {
 // モーダル内でタスクが追加された時に実行
 const confirmAddTodo = (todoData: { text: string; time: string }) => {
   const { text, time } = todoData;
-  if (text.trim() === '' || time.trim() === '') return;
+  if (text.trim() === '') return;
   handleAddTodo(text, time);
   isModalOpen.value = false; // モーダルを閉じる
 };
