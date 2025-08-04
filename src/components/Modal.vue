@@ -2,7 +2,8 @@
 import { ref, defineEmits } from 'vue';
 
 const newTodoText = ref('');
-const newTodoTime = ref('');
+const now = new Date();
+const newTodoTime = ref(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
 const emit = defineEmits(['confirm', 'close']);
 
 const submitTodo = () => {
@@ -18,7 +19,7 @@ const closeModal = () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px]">
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-2xl font-bold">新しいタスクを追加</h3>

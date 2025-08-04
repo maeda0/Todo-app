@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import Calendar from './components/Calendar.vue';
 import TodoInput from './components/TodoInput.vue';
-import AddTodoModal from './components/Modal.vue'; // 新しいモーダルコンポーネントをインポート
+import AddTodoModal from './components/Modal.vue'; 
 import { useTodoStore } from './todoStore';
 
 // --- ストアの利用 ---
