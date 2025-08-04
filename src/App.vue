@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'; 
+import { ref, computed } from 'vue';
 import Calendar from './components/Calendar.vue';
 import TodoInput from './components/TodoInput.vue';
+import AddTodoModal from './components/Modal.vue'; // 新しいモーダルコンポーネントをインポート
 import { useTodoStore } from './todoStore';
 
 // --- ストアの利用 ---
@@ -9,6 +10,9 @@ const todoStore = useTodoStore();
 
 // 選択されている日付
 const selectedDate = ref(new Date());
+
+// モーダルの表示状態を管理する変数
+const isModalOpen = ref(false);
 
 // --- ヘルパー関数 ---
 const toDateKey = (date: Date): string => {
@@ -61,6 +65,23 @@ const handleToggleTodo = (id: number) => {
 const handleRemoveTodo = (id: number) => {
   todoStore.removeTodo(selectedDateKey.value, id);
 };
+
+// モーダルを開く
+const openAddTodoModal = () => {
+  isModalOpen.value = true;
+};
+
+// モーダル内でタスクが追加された時に実行
+const confirmAddTodo = (text: string) => {
+  if (text.trim() === '') return;
+  handleAddTodo(text);
+  isModalOpen.value = false; // モーダルを閉じる
+};
+
+// モーダルを閉じる
+const closeModal = () => {
+  isModalOpen.value = false;
+};
 </script>
 
 <template>
@@ -68,9 +89,9 @@ const handleRemoveTodo = (id: number) => {
     <div class="w-full max-w-5xl h-[650px] flex flex-col md:flex-row gap-8 bg-white rounded-2xl shadow-lg p-8">
 
       <div class="w-full lg:w-1/2 flex justify-center">
-        <Calendar 
+        <Calendar
           :todos="todoStore.todos"
-          :selectedDate="selectedDate" 
+          :selectedDate="selectedDate"
           @update:selectedDate="updateSelectedDate"
          />
       </div>
@@ -80,7 +101,7 @@ const handleRemoveTodo = (id: number) => {
           <h2 class="text-2xl font-bold text-gray-800 mb-8">
             {{ formattedDate }}
           </h2>
-          <TodoInput @addTodo="handleAddTodo" />
+          <TodoInput @openModal="openAddTodoModal" />
           <div class="space-y-3 overflow-y-auto h-64 pr-2">
             <p v-if="selectedDayTodos.length === 0" class="text-gray-500 text-center mt-8">
               この日のタスクはありません。
@@ -108,6 +129,7 @@ const handleRemoveTodo = (id: number) => {
         </div>
       </div>
     </div>
+    <AddTodoModal v-if="isModalOpen" @confirm="confirmAddTodo" @close="closeModal" />
   </div>
 </template>
 
