@@ -118,14 +118,6 @@ const isSelected = (date: Date | null) => {
          date.getDate() === selectedDate.value.getDate();
 };
 
-// その日にTodoがあるかどうかを判定
-/*const hasTodo = (date: Date | null) => {
-  if (!date) return false;
-  const dateKey = toDateKey(date);
-  return props.todos[dateKey] && props.todos[dateKey].length > 0;
-};
-*/
-
 // その日に未完了のTodoがあるかどうかを判定
 const hasIncompleteTodo = computed(() => (date: Date | null) => {
   if (!date) return false;

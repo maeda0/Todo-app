@@ -1,26 +1,41 @@
 <script setup lang="ts">
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, watch } from 'vue';
 
 const newTodoText = ref('');
-const now = new Date();
-const newTodoTime = ref(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+// モーダルが開かれた時点の時刻を初期値として設定
+const newTodoTime = ref(`${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`);
+const isAllDay = ref(false);
 const emit = defineEmits(['confirm', 'close']);
 
+// isAllDayの値の変更を監視
+watch(isAllDay, (isAllDayChecked) => {
+  if (isAllDayChecked) {
+    // 終日にチェックが入ったら時間をクリアし、入力欄を「--:--」に見せる
+    newTodoTime.value = '';
+  } else {
+    // チェックが外れたら、現在の時刻を再取得して設定する
+    const now = new Date();
+    newTodoTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  }
+});
+
 const submitTodo = () => {
-  emit('confirm', { text: newTodoText.value.trim(), time: newTodoTime.value });
-  newTodoText.value = '';
-  newTodoTime.value = '';
+  emit('confirm', {
+    text: newTodoText.value.trim(),
+    time: isAllDay.value ? '' : newTodoTime.value,
+    allDay: isAllDay.value
+  });
 };
 
 const closeModal = () => {
   emit('close');
-  newTodoText.value = '';
 };
 </script>
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px]">
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
+
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-2xl font-bold">新しいタスクを追加</h3>
         <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
@@ -31,8 +46,9 @@ const closeModal = () => {
       </div>
 
       <form @submit.prevent="submitTodo" class="space-y-4">
+
         <div class="flex flex-col gap-2">
-            <label for="todo-text" class="text-sm font-medium text-gray-700">タスク名</label>
+          <label for="todo-text" class="text-sm font-medium text-gray-700">タスク名</label>
           <input
             id="todo-text"
             v-model="newTodoText"
@@ -41,16 +57,31 @@ const closeModal = () => {
             class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
+
         <div class="flex flex-col gap-2">
           <label for="todo-time" class="text-sm font-medium text-gray-700">時間</label>
           <input
             id="todo-time"
             v-model="newTodoTime"
             type="time"
+            placeholder="--:--"
             class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+            :class="{ 'bg-gray-200 text-gray-500': isAllDay }"
+            :disabled="isAllDay"
           />
         </div>
-        <div class="flex justify-end gap-2">
+        
+        <div class="flex items-center">
+          <input
+            id="all-day"
+            v-model="isAllDay"
+            type="checkbox"
+            class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mr-2"
+          />
+          <label for="all-day" class="text-sm text-gray-700">終日</label>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4">
           <button
             type="button"
             @click="closeModal"
