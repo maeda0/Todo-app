@@ -29,9 +29,32 @@ const selectedDateKey = computed(() => {
   return toDateKey(selectedDate.value);
 });
 
-// 選択された日付のToDoリスト
+// 選択された日付のToDoリストを時間順にソート
 const selectedDayTodos = computed(() => {
-  return todoStore.todos[selectedDateKey.value] || [];
+  const todos = todoStore.todos[selectedDateKey.value] || [];
+  // slice() で配列のコピーを作成してからソートする
+  return todos.slice().sort((a, b) => {
+    // --- 並べ替えのルール ---
+
+    // aだけが「終日」の場合、aをbより前に置く (-1を返す)
+    if (a.allDay && !b.allDay) {
+      return -1;
+    }
+    // bだけが「終日」の場合、bをaより前に置く (1を返す)
+    if (!a.allDay && b.allDay) {
+      return 1;
+    }
+    // aとb両方が「終日」、または両方とも時間指定ありの場合は、次のルールに進む
+
+    // aとb両方に時間指定がある場合、時刻で比較する
+    // localeCompareは文字列を比較し、aがbより前なら-1, 後なら1, 同じなら0を返す
+    if (a.time && b.time) {
+      return a.time.localeCompare(b.time);
+    }
+
+    // 上記のいずれでもない場合（例：両方終日など）は、元の順序を維持
+    return 0;
+  });
 });
 
 // フォーマットされた日付
@@ -52,8 +75,8 @@ const updateSelectedDate = (date: Date) => {
 };
 
 // Todoを追加
-const handleAddTodo = (text: string, time: string) => {
-  todoStore.addTodo(selectedDateKey.value, text, time);
+const handleAddTodo = (text: string, time: string, allDay: boolean) => {
+  todoStore.addTodo(selectedDateKey.value, text, time, allDay);
 };
 
 // Todoの完了状態を切り替え
@@ -72,10 +95,10 @@ const openAddTodoModal = () => {
 };
 
 // モーダル内でタスクが追加された時に実行
-const confirmAddTodo = (todoData: { text: string; time: string }) => {
-  const { text, time } = todoData;
+const confirmAddTodo = (todoData: { text: string; time: string; allDay: boolean }) => {
+  const { text, time, allDay } = todoData;
   if (text.trim() === '') return;
-  handleAddTodo(text, time);
+  handleAddTodo(text, time, allDay);
   isModalOpen.value = false; // モーダルを閉じる
 };
 
@@ -118,7 +141,7 @@ const closeModal = () => {
                 <input type="checkbox" :checked="todo.completed" class="mr-4 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                 <div class="flex flex-col">
                   <span class="text-sm text-gray-500">
-                    {{ todo.time }}
+                    {{ todo.allDay ? '終日' : todo.time }}
                   </span>
                   <span :class="{ 'line-through text-gray-400': todo.completed, 'text-gray-800': !todo.completed }">
                     {{ todo.text }}

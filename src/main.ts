@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate' 
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import './style.css'
 import App from './App.vue'
 import VCalendar from 'v-calendar'
@@ -9,9 +9,9 @@ import 'v-calendar/dist/style.css'
 const app = createApp(App)
 
 const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate) 
+pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
-app.component('VCalendar', VCalendar);
+// app.component('VCalendar', VCalendar); // この行を削除
 app.use(VCalendar, {});
 app.mount('#app')
