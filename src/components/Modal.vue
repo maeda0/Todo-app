@@ -33,9 +33,8 @@ const closeModal = () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-60 flex items-center justify-center backdrop-blur-[2px]">
-    <div class="bg-[#f7f7f7] rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
-
+  <div class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px]">
+    <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-2xl font-bold">新しいタスクを追加</h3>
         <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
