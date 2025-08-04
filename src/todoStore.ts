@@ -6,6 +6,7 @@ export interface Todo {
   id: number;
   text: string;
   completed: boolean;
+  time: string;
 }
 
 // ストアの定義
@@ -16,7 +17,7 @@ export const useTodoStore = defineStore('todoStore', () => {
   // --- Actions (操作) ---
 
   // 新しいTodoを追加
-  const addTodo = (dateKey: string, text: string) => {
+  const addTodo = (dateKey: string, text: string, time: string) => {
     if (!todos.value[dateKey]) {
       todos.value[dateKey] = [];
     }
@@ -24,6 +25,7 @@ export const useTodoStore = defineStore('todoStore', () => {
       id: Date.now(),
       text,
       completed: false,
+      time,
     });
   };
 

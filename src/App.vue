@@ -52,8 +52,8 @@ const updateSelectedDate = (date: Date) => {
 };
 
 // Todoを追加
-const handleAddTodo = (text: string) => {
-  todoStore.addTodo(selectedDateKey.value, text);
+const handleAddTodo = (text: string, time: string) => {
+  todoStore.addTodo(selectedDateKey.value, text, time);
 };
 
 // Todoの完了状態を切り替え
@@ -72,9 +72,10 @@ const openAddTodoModal = () => {
 };
 
 // モーダル内でタスクが追加された時に実行
-const confirmAddTodo = (text: string) => {
-  if (text.trim() === '') return;
-  handleAddTodo(text);
+const confirmAddTodo = (todoData: { text: string; time: string }) => {
+  const { text, time } = todoData;
+  if (text.trim() === '' || time.trim() === '') return;
+  handleAddTodo(text, time);
   isModalOpen.value = false; // モーダルを閉じる
 };
 
@@ -115,9 +116,14 @@ const closeModal = () => {
             >
               <div class="flex-grow flex items-center">
                 <input type="checkbox" :checked="todo.completed" class="mr-4 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span :class="{ 'line-through text-gray-400': todo.completed, 'text-gray-800': !todo.completed }">
-                  {{ todo.text }}
-                </span>
+                <div class="flex flex-col">
+                  <span class="text-sm text-gray-500">
+                    {{ todo.time }}
+                  </span>
+                  <span :class="{ 'line-through text-gray-400': todo.completed, 'text-gray-800': !todo.completed }">
+                    {{ todo.text }}
+                  </span>
+                </div>
               </div>
               <button @click.stop="handleRemoveTodo(todo.id)" class="text-red-400 hover:text-red-600 ml-4">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { defineEmits } from 'vue';
 
-const emit = defineEmits(['openModel']);
+const emit = defineEmits(['openModal']);
 
 const openModal = () => {
-  emit('openModel');
+  emit('openModal');
 };
 
 </script>

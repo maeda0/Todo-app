@@ -2,11 +2,13 @@
 import { ref, defineEmits } from 'vue';
 
 const newTodoText = ref('');
+const newTodoTime = ref('');
 const emit = defineEmits(['confirm', 'close']);
 
 const submitTodo = () => {
-  emit('confirm', newTodoText.value.trim());
+  emit('confirm', { text: newTodoText.value.trim(), time: newTodoTime.value });
   newTodoText.value = '';
+  newTodoTime.value = '';
 };
 
 const closeModal = () => {
@@ -27,12 +29,23 @@ const closeModal = () => {
         </button>
       </div>
 
-      <form @submit.prevent="submitTodo">
-        <div class="mb-4">
+      <form @submit.prevent="submitTodo" class="space-y-4">
+        <div class="flex flex-col gap-2">
+            <label for="todo-text" class="text-sm font-medium text-gray-700">タスク名</label>
           <input
+            id="todo-text"
             v-model="newTodoText"
             type="text"
             placeholder="タスクを入力してください"
+            class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label for="todo-time" class="text-sm font-medium text-gray-700">時間</label>
+          <input
+            id="todo-time"
+            v-model="newTodoTime"
+            type="time"
             class="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
           />
         </div>
